@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, AlertTriangle, Bell, User, Settings } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, AlertTriangle, Bell, User, Settings, LogOut } from 'lucide-react';
 import KondoLogo from './KondoLogo';
 
 interface SidebarProps {
@@ -10,6 +10,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ className = "" }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   const menuItems = [
     { icon: Home, label: 'Home', path: '/' },
@@ -24,6 +25,15 @@ const Sidebar: React.FC<SidebarProps> = ({ className = "" }) => {
 
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+  
+  const handleLogout = () => {
+    // Aqui você pode adicionar a lógica de logout
+    // Por exemplo, limpar tokens de autenticação do localStorage
+    localStorage.removeItem('auth_token');
+    
+    // Redirecionar para a página de login
+    navigate('/login');
   };
 
   return (
@@ -69,6 +79,15 @@ const Sidebar: React.FC<SidebarProps> = ({ className = "" }) => {
                 </Link>
               </li>
             ))}
+            <li>
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center gap-3 px-4 py-3 rounded-md transition-all hover:bg-red-100 text-red-600"
+              >
+                <LogOut size={20} />
+                <span>Sair</span>
+              </button>
+            </li>
           </ul>
         </div>
       </nav>
