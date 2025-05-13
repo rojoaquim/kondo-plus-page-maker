@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -24,6 +25,12 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				kondo: {
+					primary: '#7dd3c8',
+					secondary: '#a8e6df',
+					accent: '#ff6b6b',
+					light: '#e3f5f3',
+				},
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
@@ -62,6 +69,9 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				}
+			},
+			backgroundImage: {
+				'kondo-gradient': 'linear-gradient(to right bottom, #7dd3c8, #a8e6df)',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
