@@ -15,7 +15,7 @@ const MainLayout: React.FC = () => {
   return (
     <div className="flex h-screen bg-kondo-gradient">
       <Sidebar className={cn(
-        isMobile ? "fixed z-20 transition-transform duration-300 ease-in-out transform",
+        isMobile ? "fixed z-20 transition-transform duration-300 ease-in-out transform" : "",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )} />
       
