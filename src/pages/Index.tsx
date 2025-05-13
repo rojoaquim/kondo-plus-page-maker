@@ -7,6 +7,7 @@ import { AlertTriangle, Bell, Info, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface Incident {
   id: number;
@@ -119,112 +120,92 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">HOME</h1>
+    <div className="space-y-6 bg-gradient-to-br from-slate-100 to-teal-50 p-6 min-h-full rounded-lg">
+      <h1 className="text-xl font-semibold text-center">HOME</h1>
+
+      {/* Últimos Avisos Section */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 px-2">
+          <Bell size={16} className="text-kondo-accent" />
+          <h2 className="text-base font-medium">Últimos avisos</h2>
+        </div>
+        <div className="bg-white rounded-md shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10">#</TableHead>
+                <TableHead>Título</TableHead>
+                <TableHead className="w-24">Data</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recentAlerts.map((alert) => (
+                <TableRow 
+                  key={alert.id}
+                  className="cursor-pointer hover:bg-slate-50"
+                  onClick={() => handleAlertClick(alert)}
+                >
+                  <TableCell>{alert.id}</TableCell>
+                  <TableCell>{alert.title}</TableCell>
+                  <TableCell>{alert.date}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-medium">
-              <div className="flex items-center gap-2">
-                <AlertTriangle size={18} className="text-kondo-accent" />
-                Últimos incidentes
-              </div>
-            </CardTitle>
-            <Link to="/incidents">
-              <Button variant="ghost" size="sm">
-                Ver todos
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left pb-2">Título</th>
-                    <th className="text-left pb-2">Status</th>
-                    <th className="text-left pb-2">Data</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentIncidents.map((incident) => (
-                    <tr 
-                      key={incident.id} 
-                      className="border-b last:border-0 cursor-pointer hover:bg-slate-50"
-                      onClick={() => handleIncidentClick(incident)}
+      {/* Últimos Incidentes Section */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 px-2">
+          <AlertTriangle size={16} className="text-kondo-accent" />
+          <h2 className="text-base font-medium">Últimos incidentes</h2>
+        </div>
+        <div className="bg-white rounded-md shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10">#</TableHead>
+                <TableHead>Título</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-24">Data</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recentIncidents.map((incident) => (
+                <TableRow 
+                  key={incident.id}
+                  className="cursor-pointer hover:bg-slate-50"
+                  onClick={() => handleIncidentClick(incident)}
+                >
+                  <TableCell>{incident.id}</TableCell>
+                  <TableCell>{incident.title}</TableCell>
+                  <TableCell>
+                    <span 
+                      className={`inline-block px-2 py-1 rounded text-xs ${
+                        incident.status === 'Aberto' 
+                          ? 'bg-red-100 text-red-800' 
+                          : incident.status === 'Em andamento'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-green-100 text-green-800'
+                      }`}
                     >
-                      <td className="py-2">{incident.title}</td>
-                      <td className="py-2">
-                        <span 
-                          className={`inline-block px-2 py-1 rounded text-xs ${
-                            incident.status === 'Aberto' 
-                              ? 'bg-red-100 text-red-800' 
-                              : incident.status === 'Em andamento'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-green-100 text-green-800'
-                          }`}
-                        >
-                          {incident.status}
-                        </span>
-                      </td>
-                      <td className="py-2">{incident.date}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4">
-              <Link to="/incidents/new">
-                <Button className="w-full bg-kondo-primary hover:bg-kondo-secondary">
-                  Registrar novo incidente
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-medium">
-              <div className="flex items-center gap-2">
-                <Bell size={18} className="text-kondo-accent" />
-                Últimos avisos
-              </div>
-            </CardTitle>
-            <Link to="/alerts">
-              <Button variant="ghost" size="sm">
-                Ver todos
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left pb-2">Título</th>
-                    <th className="text-left pb-2">Data</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentAlerts.map((alert) => (
-                    <tr 
-                      key={alert.id} 
-                      className="border-b last:border-0 cursor-pointer hover:bg-slate-50"
-                      onClick={() => handleAlertClick(alert)}
-                    >
-                      <td className="py-2">{alert.title}</td>
-                      <td className="py-2">{alert.date}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                      {incident.status}
+                    </span>
+                  </TableCell>
+                  <TableCell>{incident.date}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex justify-end pt-2">
+          <Link to="/incidents/new">
+            <Button className="bg-kondo-primary hover:bg-kondo-secondary">
+              Registrar novo incidente
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Overlay component - uses Dialog for desktop and Drawer for mobile */}
