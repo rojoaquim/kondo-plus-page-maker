@@ -3,6 +3,8 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, AlertTriangle, Bell, User, Settings, LogOut } from 'lucide-react';
 import KondoLogo from './KondoLogo';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SidebarProps {
   className?: string;
@@ -27,13 +29,21 @@ const Sidebar: React.FC<SidebarProps> = ({ className = "" }) => {
     return location.pathname === path;
   };
   
-  const handleLogout = () => {
-    // Aqui você pode adicionar a lógica de logout
-    // Por exemplo, limpar tokens de autenticação do localStorage
-    localStorage.removeItem('auth_token');
-    
-    // Redirecionar para a página de login
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        toast.error('Erro ao sair: ' + error.message);
+        return;
+      }
+      
+      toast.success('Você saiu com sucesso');
+      navigate('/login');
+    } catch (error) {
+      toast.error('Ocorreu um erro ao sair');
+      console.error('Logout error:', error);
+    }
   };
 
   return (
