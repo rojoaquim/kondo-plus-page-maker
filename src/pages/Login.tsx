@@ -126,10 +126,6 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-teal-500 to-cyan-600">
-      <div className="text-white text-sm absolute top-4 left-4">
-        Tela login
-      </div>
-      
       <div className="w-full max-w-md bg-white/95 backdrop-blur-sm rounded-md shadow-xl overflow-hidden">
         <div className="flex flex-col items-center pt-10 px-8 pb-6">
           <KondoLogo size="lg" className="mb-4" />
@@ -203,17 +199,6 @@ const Login: React.FC = () => {
               >
                 {isLoading ? 'Carregando...' : 'LOGIN'}
               </Button>
-              
-              <div className="mt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
-                  onClick={() => toast.info('Funcionalidade não implementada')}
-                >
-                  LOGIN TÉCNICO
-                </Button>
-              </div>
             </form>
           </TabsContent>
           
@@ -324,10 +309,6 @@ const Login: React.FC = () => {
             </form>
           </TabsContent>
         </Tabs>
-      </div>
-      
-      <div className="text-white text-xs absolute bottom-4 left-4">
-        Tela Inicial - Modo Normal
       </div>
     </div>
   );

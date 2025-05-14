@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, AlertTriangle, Bell, User, Settings, LogOut } from 'lucide-react';
+import { Home, AlertTriangle, Bell, User, Settings, LogOut, Users } from 'lucide-react';
 import KondoLogo from './KondoLogo';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './AuthProvider';
 
 interface SidebarProps {
   className?: string;
@@ -13,12 +14,46 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ className = "" }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    if (user) {
+      checkUserRole();
+    }
+  }, [user]);
+
+  const checkUserRole = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) {
+        console.error('Erro ao verificar papel do usuário:', error);
+        return;
+      }
+      
+      setIsAdmin(data?.role === 'sindico');
+    } catch (error) {
+      console.error('Erro:', error);
+    }
+  };
   
   const menuItems = [
     { icon: Home, label: 'Home', path: '/' },
     { icon: AlertTriangle, label: 'Incidentes', path: '/incidents' },
     { icon: Bell, label: 'Avisos', path: '/alerts' },
   ];
+
+  // Incluir item de menu de usuários apenas para síndico
+  if (isAdmin) {
+    menuItems.push({ icon: Users, label: 'Usuários', path: '/users' });
+  }
   
   const bottomMenuItems = [
     { icon: User, label: 'Usuário', path: '/profile' },
