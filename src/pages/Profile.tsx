@@ -21,7 +21,7 @@ interface Profile {
 }
 
 const Profile: React.FC = () => {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -42,6 +42,7 @@ const Profile: React.FC = () => {
       if (!user) return;
       
       try {
+        setLoading(true);
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -50,7 +51,7 @@ const Profile: React.FC = () => {
           
         if (error) {
           console.error('Error fetching profile:', error);
-          toast.error('Erro ao carregar perfil');
+          toast.error('Erro ao carregar perfil: ' + error.message);
           return;
         }
         
@@ -67,7 +68,9 @@ const Profile: React.FC = () => {
       }
     };
     
-    fetchProfile();
+    if (user) {
+      fetchProfile();
+    }
   }, [user]);
 
   const handleSave = async () => {
@@ -142,6 +145,7 @@ const Profile: React.FC = () => {
       
       if (signInError) {
         toast.error('Senha atual incorreta');
+        setChangingPassword(false);
         return;
       }
       

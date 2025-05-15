@@ -6,13 +6,15 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/AuthProvider';
 import { Settings as SettingsIcon } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
 
-interface SettingsProps {
-  onCompactSidebarChange?: (isCompact: boolean) => void;
+interface MainLayoutContext {
+  setIsCompactSidebar: (value: boolean) => void;
 }
 
-const Settings: React.FC<SettingsProps> = ({ onCompactSidebarChange }) => {
+const Settings: React.FC = () => {
   const [compactSidebar, setCompactSidebar] = useState(false);
+  const { setIsCompactSidebar } = useOutletContext<MainLayoutContext>();
 
   // Aplicar preferências salvas no carregamento
   useEffect(() => {
@@ -21,16 +23,11 @@ const Settings: React.FC<SettingsProps> = ({ onCompactSidebarChange }) => {
       try {
         const settings = JSON.parse(savedSettings);
         setCompactSidebar(settings.compactSidebar || false);
-        
-        // Propagar alteração para o componente pai
-        if (onCompactSidebarChange) {
-          onCompactSidebarChange(settings.compactSidebar || false);
-        }
       } catch (error) {
         console.error('Erro ao carregar configurações:', error);
       }
     }
-  }, [onCompactSidebarChange]);
+  }, []);
 
   // Atualizar a preferência de sidebar compacta
   const handleCompactSidebarChange = (value: boolean) => {
@@ -49,12 +46,11 @@ const Settings: React.FC<SettingsProps> = ({ onCompactSidebarChange }) => {
     }
     
     localStorage.setItem('kondo_settings', JSON.stringify(settings));
-    toast.success(`Sidebar ${value ? 'compacta' : 'expandida'} aplicada`);
     
     // Propagar alteração para o componente pai
-    if (onCompactSidebarChange) {
-      onCompactSidebarChange(value);
-    }
+    setIsCompactSidebar(value);
+    
+    toast.success(`Sidebar ${value ? 'compacta' : 'expandida'} aplicada`);
   };
 
   return (

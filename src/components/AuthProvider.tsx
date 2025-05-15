@@ -8,12 +8,14 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
+  refreshUser: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -32,10 +34,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const refreshUser = async () => {
+    const { data } = await supabase.auth.getUser();
+    if (data?.user) {
+      setUser(data.user);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        console.log("Auth state changed:", _event);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -44,6 +54,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Session check:", session ? "Authenticated" : "Unauthenticated");
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -68,6 +79,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     user,
     session,
     loading,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

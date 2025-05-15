@@ -28,6 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = "", isCompact = false }) 
     if (!user) return;
     
     try {
+      console.log('Verificando papel do usuário com ID:', user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
@@ -39,6 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className = "", isCompact = false }) 
         return;
       }
       
+      console.log('Papel do usuário:', data?.role);
       setIsAdmin(data?.role === 'sindico');
     } catch (error) {
       console.error('Erro:', error);
