@@ -1,18 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Bell, Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/components/AuthProvider';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
+import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
+import { useAuth } from '@/components/AuthProvider';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Alert {
   id: string;
@@ -24,18 +22,19 @@ interface Alert {
 
 const Alerts: React.FC = () => {
   const { user } = useAuth();
-  const isMobile = useIsMobile();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSindico, setIsSindico] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
-  const [overlayOpen, setOverlayOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  
+  // Novo aviso
   const [newAlertOpen, setNewAlertOpen] = useState(false);
   const [newAlertTitle, setNewAlertTitle] = useState('');
   const [newAlertDescription, setNewAlertDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
-
+  
   useEffect(() => {
     fetchAlerts();
     checkUserRole();
@@ -44,37 +43,35 @@ const Alerts: React.FC = () => {
   const checkUserRole = async () => {
     if (!user) return;
     
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      
+      setIsSindico(data.role === 'sindico');
+    } catch (error) {
       console.error('Erro ao verificar papel do usuário:', error);
-      return;
     }
-    
-    setIsAdmin(data.role === 'sindico');
   };
 
   const fetchAlerts = async () => {
     try {
       setLoading(true);
+      
       const { data, error } = await supabase
         .from('alerts')
         .select('*')
         .order('created_at', { ascending: false });
       
-      if (error) {
-        console.error('Erro ao buscar avisos:', error);
-        toast.error('Erro ao carregar avisos');
-        return;
-      }
+      if (error) throw error;
       
       setAlerts(data || []);
     } catch (error) {
-      console.error('Erro:', error);
+      console.error('Erro ao buscar avisos:', error);
       toast.error('Erro ao carregar avisos');
     } finally {
       setLoading(false);
@@ -83,26 +80,15 @@ const Alerts: React.FC = () => {
 
   const handleAlertClick = (alert: Alert) => {
     setSelectedAlert(alert);
-    setOverlayOpen(true);
+    setAlertDialogOpen(true);
   };
 
-  const closeOverlay = () => {
-    setOverlayOpen(false);
-    setSelectedAlert(null);
-  };
-
-  const filteredAlerts = alerts.filter(alert => 
-    alert.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleNewAlert = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!newAlertTitle || !newAlertDescription) {
-      toast.error('Por favor, preencha todos os campos');
+  const handleCreateAlert = async () => {
+    if (!newAlertTitle.trim() || !newAlertDescription.trim()) {
+      toast.error('Preencha todos os campos obrigatórios');
       return;
     }
-
+    
     try {
       setSubmitting(true);
       
@@ -116,11 +102,7 @@ const Alerts: React.FC = () => {
           }
         ]);
       
-      if (error) {
-        console.error('Erro ao criar aviso:', error);
-        toast.error('Erro ao criar aviso');
-        return;
-      }
+      if (error) throw error;
       
       toast.success('Aviso criado com sucesso!');
       setNewAlertOpen(false);
@@ -128,7 +110,7 @@ const Alerts: React.FC = () => {
       setNewAlertDescription('');
       fetchAlerts();
     } catch (error) {
-      console.error('Erro:', error);
+      console.error('Erro ao criar aviso:', error);
       toast.error('Erro ao criar aviso');
     } finally {
       setSubmitting(false);
@@ -143,32 +125,19 @@ const Alerts: React.FC = () => {
     }
   };
 
-  const OverlayContent = () => {
-    if (!selectedAlert) return null;
-
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium text-lg">#{selectedAlert.id.slice(0, 8)} - {selectedAlert.title}</h3>
-        </div>
-        <div className="text-sm text-muted-foreground">
-          <span>Data: {formatDate(selectedAlert.created_at)}</span>
-        </div>
-        <div className="mt-4">
-          <p className="text-sm whitespace-pre-wrap">{selectedAlert.description}</p>
-        </div>
-      </div>
-    );
-  };
+  const filteredAlerts = alerts.filter(alert => 
+    alert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    alert.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">AVISOS</h1>
-        {isAdmin && (
-          <Button 
-            onClick={() => setNewAlertOpen(true)} 
-            className="bg-kondo-primary hover:bg-kondo-secondary flex items-center gap-2"
+        {isSindico && (
+          <Button
+            onClick={() => setNewAlertOpen(true)}
+            className="bg-kondo-primary hover:bg-kondo-secondary text-white shadow-lg flex items-center gap-2"
           >
             <Plus size={18} />
             Novo aviso
@@ -233,128 +202,79 @@ const Alerts: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Overlay para visualizar detalhes do aviso */}
-      {isMobile ? (
-        <Drawer open={overlayOpen} onOpenChange={setOverlayOpen}>
-          <DrawerContent>
-            <DrawerHeader className="relative">
-              <DrawerTitle>Detalhes do Aviso</DrawerTitle>
-              <DrawerClose className="absolute right-4 top-4" onClick={closeOverlay}>
-                <X className="h-4 w-4" />
-              </DrawerClose>
-            </DrawerHeader>
-            <div className="px-4 pb-4">
-              <OverlayContent />
+      {/* Dialog para visualizar detalhes do aviso */}
+      <Dialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedAlert?.title}</DialogTitle>
+          </DialogHeader>
+          {selectedAlert && (
+            <div className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                <span>Data: {formatDate(selectedAlert.created_at)}</span>
+              </div>
+              
+              <div className="mt-4">
+                <p className="whitespace-pre-wrap text-sm">{selectedAlert.description}</p>
+              </div>
+              
+              <DialogFooter>
+                <Button onClick={() => setAlertDialogOpen(false)}>
+                  Fechar
+                </Button>
+              </DialogFooter>
             </div>
-          </DrawerContent>
-        </Drawer>
-      ) : (
-        <Dialog open={overlayOpen} onOpenChange={setOverlayOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Detalhes do Aviso</DialogTitle>
-            </DialogHeader>
-            <OverlayContent />
-          </DialogContent>
-        </Dialog>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
 
-      {/* Overlay para criar novo aviso */}
-      {isMobile ? (
-        <Drawer open={newAlertOpen} onOpenChange={setNewAlertOpen}>
-          <DrawerContent>
-            <DrawerHeader className="relative">
-              <DrawerTitle>Novo Aviso</DrawerTitle>
-              <DrawerClose className="absolute right-4 top-4" onClick={() => setNewAlertOpen(false)}>
-                <X className="h-4 w-4" />
-              </DrawerClose>
-            </DrawerHeader>
-            <div className="px-4 pb-4">
-              <form onSubmit={handleNewAlert} className="space-y-4">
-                <div>
-                  <label htmlFor="title" className="block text-sm font-medium mb-1">
-                    Título
-                  </label>
-                  <Input
-                    id="title"
-                    value={newAlertTitle}
-                    onChange={(e) => setNewAlertTitle(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium mb-1">
-                    Descrição
-                  </label>
-                  <Textarea
-                    id="description"
-                    value={newAlertDescription}
-                    onChange={(e) => setNewAlertDescription(e.target.value)}
-                    rows={5}
-                    required
-                  />
-                </div>
-                <Button 
-                  type="submit" 
-                  className="w-full bg-kondo-primary hover:bg-kondo-secondary"
-                  disabled={submitting}
-                >
-                  {submitting ? 'Enviando...' : 'Criar Aviso'}
-                </Button>
-              </form>
+      {/* Dialog para criar novo aviso */}
+      <Dialog open={newAlertOpen} onOpenChange={setNewAlertOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo Aviso</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Título</Label>
+              <Input
+                id="title"
+                value={newAlertTitle}
+                onChange={(e) => setNewAlertTitle(e.target.value)}
+                placeholder="Digite o título do aviso"
+              />
             </div>
-          </DrawerContent>
-        </Drawer>
-      ) : (
-        <Dialog open={newAlertOpen} onOpenChange={setNewAlertOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Novo Aviso</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleNewAlert} className="space-y-4">
-              <div>
-                <label htmlFor="title" className="block text-sm font-medium mb-1">
-                  Título
-                </label>
-                <Input
-                  id="title"
-                  value={newAlertTitle}
-                  onChange={(e) => setNewAlertTitle(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium mb-1">
-                  Descrição
-                </label>
-                <Textarea
-                  id="description"
-                  value={newAlertDescription}
-                  onChange={(e) => setNewAlertDescription(e.target.value)}
-                  rows={5}
-                  required
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setNewAlertOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-kondo-primary hover:bg-kondo-secondary"
-                  disabled={submitting}
-                >
-                  {submitting ? 'Enviando...' : 'Criar Aviso'}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
+              <Textarea
+                id="description"
+                value={newAlertDescription}
+                onChange={(e) => setNewAlertDescription(e.target.value)}
+                placeholder="Digite a descrição do aviso"
+                rows={5}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setNewAlertOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleCreateAlert}
+              className="bg-kondo-primary hover:bg-kondo-secondary"
+              disabled={submitting}
+            >
+              {submitting ? 'Criando...' : 'Criar Aviso'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -1,73 +1,97 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Bell, Info, X } from 'lucide-react';
+import { AlertTriangle, Bell, Info, Plus, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
+import { format } from 'date-fns';
 
 interface Incident {
-  id: number;
+  id: string;
   title: string;
   status: string;
-  date: string;
-  description?: string;
+  created_at: string;
+  description: string;
+  response?: string;
+  closing_note?: string;
 }
 
 interface Alert {
-  id: number;
+  id: string;
   title: string;
-  date: string;
-  description?: string;
+  created_at: string;
+  description: string;
 }
 
 const Dashboard: React.FC = () => {
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [overlayOpen, setOverlayOpen] = useState(false);
+  const [recentIncidents, setRecentIncidents] = useState<Incident[]>([]);
+  const [recentAlerts, setRecentAlerts] = useState<Alert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isSindico, setIsSindico] = useState(false);
 
-  const [recentIncidents] = useState<Incident[]>([
-    { 
-      id: 1, 
-      title: "Falha no sistema", 
-      status: "Aberto", 
-      date: "10/05/2025",
-      description: "Falha detectada no sistema principal. A equipe técnica já foi notificada e está trabalhando para resolver o problema o mais rápido possível."
-    },
-    { 
-      id: 2, 
-      title: "Erro de login", 
-      status: "Em andamento", 
-      date: "09/05/2025",
-      description: "Alguns usuários relataram problemas ao fazer login na plataforma. Nossa equipe está investigando as causas e implementando uma solução."
-    },
-    { 
-      id: 3, 
-      title: "Servidor fora do ar", 
-      status: "Resolvido", 
-      date: "08/05/2025",
-      description: "O servidor secundário ficou indisponível por aproximadamente 20 minutos. O problema já foi resolvido e todos os serviços estão funcionando normalmente."
-    },
-  ]);
+  useEffect(() => {
+    fetchData();
+    checkUserRole();
+  }, []);
 
-  const [recentAlerts] = useState<Alert[]>([
-    { 
-      id: 1, 
-      title: "Manutenção programada", 
-      date: "15/05/2025",
-      description: "Haverá uma manutenção programada no dia 15/05 entre 02:00 e 04:00. Durante este período, o sistema poderá ficar indisponível."
-    },
-    { 
-      id: 2, 
-      title: "Atualização de sistema", 
-      date: "12/05/2025",
-      description: "Uma nova versão do sistema será lançada no dia 12/05. Esta atualização inclui melhorias de desempenho e correções de bugs."
-    },
-  ]);
+  const checkUserRole = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      
+      setIsSindico(data?.role === 'sindico');
+    } catch (error) {
+      console.error('Erro ao verificar papel do usuário:', error);
+    }
+  };
+
+  const fetchData = async () => {
+    setLoading(true);
+    
+    try {
+      // Buscar incidentes recentes
+      const { data: incidentsData, error: incidentsError } = await supabase
+        .from('incidents')
+        .select('id, title, status, created_at, description, response, closing_note')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      if (incidentsError) throw incidentsError;
+      setRecentIncidents(incidentsData || []);
+      
+      // Buscar alertas recentes
+      const { data: alertsData, error: alertsError } = await supabase
+        .from('alerts')
+        .select('id, title, created_at, description')
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      if (alertsError) throw alertsError;
+      setRecentAlerts(alertsData || []);
+    } catch (error) {
+      console.error('Erro ao buscar dados:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleIncidentClick = (incident: Incident) => {
     setSelectedIncident(incident);
@@ -85,38 +109,79 @@ const Dashboard: React.FC = () => {
     setOverlayOpen(false);
   };
 
+  const formatDate = (dateStr: string) => {
+    try {
+      return format(new Date(dateStr), 'dd/MM/yyyy');
+    } catch (error) {
+      return dateStr;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Aberto':
+        return 'bg-red-100 text-red-800';
+      case 'Respondido':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Resolvido':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   const OverlayContent = () => {
     const item = selectedIncident || selectedAlert;
     if (!item) return null;
 
-    const title = selectedIncident ? `Incidente: ${item.title}` : `Aviso: ${item.title}`;
-    const statusLabel = selectedIncident ? (
-      <span 
-        className={`inline-block px-2 py-1 rounded text-xs ${
-          selectedIncident.status === 'Aberto' 
-            ? 'bg-red-100 text-red-800' 
-            : selectedIncident.status === 'Em andamento'
-              ? 'bg-yellow-100 text-yellow-800'
-              : 'bg-green-100 text-green-800'
-        }`}
-      >
-        {selectedIncident.status}
-      </span>
-    ) : null;
-
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium text-lg">{title}</h3>
-          {statusLabel}
+    if (selectedIncident) {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium text-lg">#{selectedIncident.id.slice(0, 8)} - {selectedIncident.title}</h3>
+            <span 
+              className={`inline-block px-2 py-1 rounded text-xs ${getStatusColor(selectedIncident.status)}`}
+            >
+              {selectedIncident.status}
+            </span>
+          </div>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Info size={16} className="mr-1" />
+            <span>Data: {formatDate(selectedIncident.created_at)}</span>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-700">Descrição:</p>
+            <p className="text-sm whitespace-pre-wrap">{selectedIncident.description}</p>
+          </div>
+          
+          {selectedIncident.response && (
+            <div className="mt-4 border-t pt-4">
+              <p className="text-sm font-medium text-slate-700">Resposta:</p>
+              <p className="text-sm whitespace-pre-wrap">{selectedIncident.response}</p>
+            </div>
+          )}
+          
+          {selectedIncident.closing_note && (
+            <div className="mt-4 border-t pt-4">
+              <p className="text-sm font-medium text-slate-700">Nota de encerramento:</p>
+              <p className="text-sm whitespace-pre-wrap">{selectedIncident.closing_note}</p>
+            </div>
+          )}
         </div>
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Info size={16} className="mr-1" />
-          <span>Data: {item.date}</span>
+      );
+    } else {
+      // Mostra informações do alerta selecionado
+      return (
+        <div className="space-y-4">
+          <h3 className="font-medium text-lg">#{selectedAlert.id.slice(0, 8)} - {selectedAlert.title}</h3>
+          <div className="flex items-center text-sm text-muted-foreground">
+            <Info size={16} className="mr-1" />
+            <span>Data: {formatDate(selectedAlert.created_at)}</span>
+          </div>
+          <p className="text-sm">{selectedAlert.description}</p>
         </div>
-        <p className="text-sm">{item.description}</p>
-      </div>
-    );
+      );
+    }
   };
 
   return (
@@ -125,9 +190,23 @@ const Dashboard: React.FC = () => {
 
       {/* Últimos Avisos Section */}
       <div className="space-y-2">
-        <div className="flex items-center gap-2 px-2">
-          <Bell size={16} className="text-kondo-accent" />
-          <h2 className="text-base font-medium">Últimos avisos</h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 px-2">
+            <Bell size={16} className="text-kondo-accent" />
+            <h2 className="text-base font-medium">Avisos</h2>
+          </div>
+          {isSindico && (
+            <Link to="/alerts">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="flex items-center gap-1"
+              >
+                <Plus size={14} />
+                Novo
+              </Button>
+            </Link>
+          )}
         </div>
         <div className="bg-white rounded-md shadow-sm">
           <Table>
@@ -139,17 +218,27 @@ const Dashboard: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentAlerts.map((alert) => (
-                <TableRow 
-                  key={alert.id}
-                  className="cursor-pointer hover:bg-slate-50"
-                  onClick={() => handleAlertClick(alert)}
-                >
-                  <TableCell>{alert.id}</TableCell>
-                  <TableCell>{alert.title}</TableCell>
-                  <TableCell>{alert.date}</TableCell>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center">Carregando...</TableCell>
                 </TableRow>
-              ))}
+              ) : recentAlerts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center">Nenhum aviso encontrado</TableCell>
+                </TableRow>
+              ) : (
+                recentAlerts.map((alert) => (
+                  <TableRow 
+                    key={alert.id}
+                    className="cursor-pointer hover:bg-slate-50"
+                    onClick={() => handleAlertClick(alert)}
+                  >
+                    <TableCell>{alert.id.slice(0, 8)}</TableCell>
+                    <TableCell>{alert.title}</TableCell>
+                    <TableCell>{formatDate(alert.created_at)}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
@@ -159,7 +248,7 @@ const Dashboard: React.FC = () => {
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-2">
           <AlertTriangle size={16} className="text-kondo-accent" />
-          <h2 className="text-base font-medium">Últimos incidentes</h2>
+          <h2 className="text-base font-medium">Incidentes</h2>
         </div>
         <div className="bg-white rounded-md shadow-sm">
           <Table>
@@ -172,30 +261,34 @@ const Dashboard: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentIncidents.map((incident) => (
-                <TableRow 
-                  key={incident.id}
-                  className="cursor-pointer hover:bg-slate-50"
-                  onClick={() => handleIncidentClick(incident)}
-                >
-                  <TableCell>{incident.id}</TableCell>
-                  <TableCell>{incident.title}</TableCell>
-                  <TableCell>
-                    <span 
-                      className={`inline-block px-2 py-1 rounded text-xs ${
-                        incident.status === 'Aberto' 
-                          ? 'bg-red-100 text-red-800' 
-                          : incident.status === 'Em andamento'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-green-100 text-green-800'
-                      }`}
-                    >
-                      {incident.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>{incident.date}</TableCell>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center">Carregando...</TableCell>
                 </TableRow>
-              ))}
+              ) : recentIncidents.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center">Nenhum incidente encontrado</TableCell>
+                </TableRow>
+              ) : (
+                recentIncidents.map((incident) => (
+                  <TableRow 
+                    key={incident.id}
+                    className="cursor-pointer hover:bg-slate-50"
+                    onClick={() => handleIncidentClick(incident)}
+                  >
+                    <TableCell>{incident.id.slice(0, 8)}</TableCell>
+                    <TableCell>{incident.title}</TableCell>
+                    <TableCell>
+                      <span 
+                        className={`inline-block px-2 py-1 rounded text-xs ${getStatusColor(incident.status)}`}
+                      >
+                        {incident.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>{formatDate(incident.created_at)}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>

@@ -7,10 +7,12 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface UserProfile {
   id: string;
@@ -19,6 +21,7 @@ interface UserProfile {
   apartment: string;
   block: string;
   created_at: string;
+  role: 'sindico' | 'morador';
 }
 
 const Users: React.FC = () => {
@@ -30,6 +33,8 @@ const Users: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [updatingRole, setUpdatingRole] = useState(false);
+  const [isUserAdmin, setIsUserAdmin] = useState(false);
   
   useEffect(() => {
     checkAdminAndLoadUsers();
@@ -94,6 +99,7 @@ const Users: React.FC = () => {
 
   const handleUserClick = (user: UserProfile) => {
     setSelectedUser(user);
+    setIsUserAdmin(user.role === 'sindico');
     setUserDialogOpen(true);
   };
 
@@ -114,12 +120,51 @@ const Users: React.FC = () => {
       }
       
       toast.success(`E-mail de redefinição de senha enviado para ${selectedUser.email}`);
-      setUserDialogOpen(false);
     } catch (error) {
       console.error('Erro:', error);
       toast.error('Erro ao processar solicitação de redefinição de senha');
     } finally {
       setResettingPassword(false);
+    }
+  };
+
+  const handleRoleChange = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      setUpdatingRole(true);
+      
+      const newRole = isUserAdmin ? 'morador' : 'sindico';
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', selectedUser.id);
+      
+      if (error) {
+        console.error('Erro ao atualizar papel do usuário:', error);
+        toast.error('Erro ao atualizar papel do usuário');
+        return;
+      }
+      
+      // Atualizar o usuário na lista
+      setUsers(users.map(u => {
+        if (u.id === selectedUser.id) {
+          return { ...u, role: newRole };
+        }
+        return u;
+      }));
+      
+      // Atualizar o usuário selecionado
+      setSelectedUser({ ...selectedUser, role: newRole });
+      setIsUserAdmin(newRole === 'sindico');
+      
+      toast.success(`Papel do usuário alterado para ${newRole === 'sindico' ? 'Síndico' : 'Morador'}`);
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error('Erro ao atualizar papel do usuário');
+    } finally {
+      setUpdatingRole(false);
     }
   };
 
@@ -181,35 +226,50 @@ const Users: React.FC = () => {
                   <th className="text-left pb-2">Apto</th>
                   <th className="text-left pb-2">Bloco</th>
                   <th className="text-left pb-2">Cadastro</th>
+                  <th className="text-left pb-2">Papel</th>
                   <th className="text-left pb-2">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="py-4 text-center">Carregando...</td>
+                    <td colSpan={7} className="py-4 text-center">Carregando...</td>
                   </tr>
                 ) : filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-4 text-center">Nenhum usuário encontrado</td>
+                    <td colSpan={7} className="py-4 text-center">Nenhum usuário encontrado</td>
                   </tr>
                 ) : (
                   filteredUsers.map((profile) => (
-                    <tr key={profile.id} className="border-b last:border-0">
+                    <tr key={profile.id} className="border-b last:border-0 hover:bg-slate-50 cursor-pointer" onClick={() => handleUserClick(profile)}>
                       <td className="py-3">{profile.full_name}</td>
                       <td className="py-3">{profile.email}</td>
                       <td className="py-3">{profile.apartment}</td>
                       <td className="py-3">{profile.block}</td>
                       <td className="py-3">{formatDate(profile.created_at)}</td>
                       <td className="py-3">
+                        {profile.role === 'sindico' ? (
+                          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
+                            Síndico
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                            Morador
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
                               Ações
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleUserClick(profile)}>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              handleUserClick(profile);
+                            }}>
                               Ver detalhes
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -253,9 +313,30 @@ const Users: React.FC = () => {
                   <p className="text-sm text-gray-500">Data de cadastro</p>
                   <p className="font-medium">{formatDate(selectedUser.created_at)}</p>
                 </div>
+                <div className="col-span-2 pt-2">
+                  <div className="flex items-center justify-between space-x-2">
+                    <Label htmlFor="user-role" className="flex flex-col space-y-1">
+                      <span>Papel de Síndico</span>
+                      <span className="font-normal text-xs text-gray-500">
+                        Permite que o usuário tenha acesso a todas as funções administrativas
+                      </span>
+                    </Label>
+                    <Switch
+                      id="user-role"
+                      checked={isUserAdmin}
+                      onCheckedChange={() => handleRoleChange()}
+                      disabled={updatingRole || selectedUser.id === user?.id}
+                    />
+                  </div>
+                  {selectedUser.id === user?.id && (
+                    <p className="text-xs text-amber-500 mt-1">
+                      Você não pode alterar seu próprio papel
+                    </p>
+                  )}
+                </div>
               </div>
               
-              <div className="flex justify-end gap-2 pt-4">
+              <DialogFooter className="flex justify-end gap-2 pt-4">
                 <Button
                   variant="outline"
                   onClick={() => setUserDialogOpen(false)}
@@ -269,7 +350,7 @@ const Users: React.FC = () => {
                 >
                   {resettingPassword ? 'Enviando...' : 'Redefinir senha'}
                 </Button>
-              </div>
+              </DialogFooter>
             </div>
           )}
         </DialogContent>

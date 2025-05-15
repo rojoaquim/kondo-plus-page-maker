@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { User } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 interface Profile {
   id: string;
@@ -20,10 +21,15 @@ interface Profile {
 }
 
 const Profile: React.FC = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
   
   // Campos editáveis
   const [fullName, setFullName] = useState('');
@@ -111,6 +117,55 @@ const Profile: React.FC = () => {
       setEmail(profile.email);
       setApartment(profile.apartment);
       setBlock(profile.block);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error('As senhas não coincidem');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('A nova senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      
+      // Verificar senha atual
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password
+      });
+      
+      if (signInError) {
+        toast.error('Senha atual incorreta');
+        return;
+      }
+      
+      // Atualizar senha
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) {
+        console.error('Error updating password:', error);
+        toast.error('Erro ao atualizar senha');
+        return;
+      }
+      
+      toast.success('Senha atualizada com sucesso');
+      setChangePasswordOpen(false);
+      setPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Ocorreu um erro ao atualizar a senha');
+    } finally {
+      setChangingPassword(false);
     }
   };
   
@@ -205,7 +260,7 @@ const Profile: React.FC = () => {
                 </div>
               </div>
               
-              {isEditing && (
+              {isEditing ? (
                 <div className="flex justify-end space-x-3 pt-4">
                   <Button variant="outline" onClick={handleCancel}>
                     Cancelar
@@ -217,11 +272,74 @@ const Profile: React.FC = () => {
                     Salvar
                   </Button>
                 </div>
+              ) : (
+                <div className="flex justify-end space-x-3 pt-4">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setChangePasswordOpen(true)}
+                  >
+                    Alterar Senha
+                  </Button>
+                </div>
               )}
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Dialog para alterar senha */}
+      <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Alterar Senha</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Senha Atual</Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nova Senha</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirmar Nova Senha</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChangePasswordOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleChangePassword}
+              className="bg-kondo-primary hover:bg-kondo-secondary"
+              disabled={changingPassword}
+            >
+              {changingPassword ? 'Alterando...' : 'Alterar Senha'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

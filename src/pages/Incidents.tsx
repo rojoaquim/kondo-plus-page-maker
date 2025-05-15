@@ -80,13 +80,10 @@ const Incidents: React.FC = () => {
     try {
       setLoading(true);
       
-      // Base query
-      let query = supabase
+      const { data, error } = await supabase
         .from('incidents')
         .select('*')
         .order('created_at', { ascending: false });
-      
-      const { data, error } = await query;
       
       if (error) {
         console.error('Erro ao buscar incidentes:', error);

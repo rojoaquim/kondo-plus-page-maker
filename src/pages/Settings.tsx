@@ -1,94 +1,91 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { useAuth } from '@/components/AuthProvider';
+import { Settings as SettingsIcon } from 'lucide-react';
 
-const Settings: React.FC = () => {
+interface SettingsProps {
+  onCompactSidebarChange?: (isCompact: boolean) => void;
+}
+
+const Settings: React.FC<SettingsProps> = ({ onCompactSidebarChange }) => {
+  const [compactSidebar, setCompactSidebar] = useState(false);
+
+  // Aplicar preferências salvas no carregamento
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('kondo_settings');
+    if (savedSettings) {
+      try {
+        const settings = JSON.parse(savedSettings);
+        setCompactSidebar(settings.compactSidebar || false);
+        
+        // Propagar alteração para o componente pai
+        if (onCompactSidebarChange) {
+          onCompactSidebarChange(settings.compactSidebar || false);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
+      }
+    }
+  }, [onCompactSidebarChange]);
+
+  // Atualizar a preferência de sidebar compacta
+  const handleCompactSidebarChange = (value: boolean) => {
+    setCompactSidebar(value);
+    
+    // Salvar configuração
+    const currentSettings = localStorage.getItem('kondo_settings');
+    let settings = { compactSidebar: value };
+    
+    if (currentSettings) {
+      try {
+        settings = { ...JSON.parse(currentSettings), compactSidebar: value };
+      } catch (error) {
+        console.error('Erro ao analisar configurações:', error);
+      }
+    }
+    
+    localStorage.setItem('kondo_settings', JSON.stringify(settings));
+    toast.success(`Sidebar ${value ? 'compacta' : 'expandida'} aplicada`);
+    
+    // Propagar alteração para o componente pai
+    if (onCompactSidebarChange) {
+      onCompactSidebarChange(value);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Configurações</h1>
 
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Notificações</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-medium flex items-center gap-2">
+            <SettingsIcon size={18} className="text-kondo-primary" />
+            Preferências de Interface
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="email-notifications">Notificações por e-mail</Label>
+                <Label htmlFor="compact-sidebar">Sidebar Compacta</Label>
                 <p className="text-sm text-muted-foreground">
-                  Receba alertas e atualizações por e-mail
+                  Exibe apenas os ícones na barra lateral
                 </p>
               </div>
               <Switch
-                id="email-notifications"
-                defaultChecked
-                onCheckedChange={() => toast.success('Configuração salva')}
+                id="compact-sidebar"
+                checked={compactSidebar}
+                onCheckedChange={handleCompactSidebarChange}
               />
             </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="browser-notifications">Notificações no navegador</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receba notificações em tempo real no navegador
-                </p>
-              </div>
-              <Switch
-                id="browser-notifications"
-                defaultChecked
-                onCheckedChange={() => toast.success('Configuração salva')}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Aparência</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="sidebar-compact">Sidebar compacta</Label>
-                <p className="text-sm text-muted-foreground">
-                  Reduz o tamanho da barra lateral
-                </p>
-              </div>
-              <Switch
-                id="sidebar-compact"
-                onCheckedChange={() => toast.success('Configuração salva')}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Segurança</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={() => toast.info('Funcionalidade não implementada')}
-            >
-              Alterar senha
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={() => toast.info('Funcionalidade não implementada')}
-            >
-              Configurar autenticação de dois fatores
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -1,89 +1,117 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/components/AuthProvider';
+import { supabase } from '@/integrations/supabase/client';
 
 const NewIncident: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState('');
-  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!title || !description || !priority) {
-      toast.error('Por favor preencha todos os campos obrigatórios');
+    if (!title.trim() || !description.trim()) {
+      toast.error('Preencha todos os campos obrigatórios');
       return;
     }
-    
-    // Simulate API call
-    toast.success('Incidente registrado com sucesso!');
-    navigate('/incidents');
-  };
 
-  const handleCancel = () => {
-    navigate('/incidents');
+    if (!user) {
+      toast.error('Você precisa estar logado para registrar um incidente');
+      navigate('/login');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('incidents')
+        .insert([
+          {
+            title,
+            description,
+            user_id: user.id,
+            status: 'Aberto'
+          }
+        ]);
+
+      if (error) {
+        console.error('Erro ao criar incidente:', error);
+        toast.error('Erro ao registrar incidente');
+        return;
+      }
+      
+      toast.success('Incidente registrado com sucesso!');
+      navigate('/incidents');
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error('Erro ao processar sua solicitação');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Novo Incidente</h1>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Detalhes do incidente</CardTitle>
+      
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg font-medium flex items-center gap-2">
+            <AlertTriangle size={18} className="text-kondo-accent" />
+            Registrar Incidente
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Título do incidente</Label>
+              <Label htmlFor="title">Título</Label>
               <Input
                 id="title"
+                placeholder="Digite um título breve para o incidente"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Digite o título do incidente"
-                className="w-full"
+                required
               />
             </div>
-
+            
             <div className="space-y-2">
-              <Label htmlFor="description">Descrição do incidente</Label>
+              <Label htmlFor="description">Descrição</Label>
               <Textarea
                 id="description"
+                placeholder="Descreva detalhadamente o incidente"
+                rows={6}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Descreva detalhadamente o incidente"
-                className="min-h-[120px]"
+                required
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="priority">Prioridade</Label>
-              <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione a prioridade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Alta">Alta</SelectItem>
-                  <SelectItem value="Média">Média</SelectItem>
-                  <SelectItem value="Baixa">Baixa</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
+            
             <div className="flex justify-end space-x-3 pt-4">
-              <Button type="button" variant="outline" onClick={handleCancel}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => navigate('/incidents')}
+              >
                 Cancelar
               </Button>
-              <Button type="submit" className="bg-kondo-primary hover:bg-kondo-secondary">
-                Enviar
+              <Button 
+                type="submit" 
+                className="bg-kondo-accent hover:bg-kondo-accent/90"
+                disabled={loading}
+              >
+                {loading ? 'Enviando...' : 'Registrar Incidente'}
               </Button>
             </div>
           </form>
