@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
-import Sidebar from './Sidebar';
+import { Sidebar } from './Sidebar';
 
 const MainLayout: React.FC = () => {
   const [isCompactSidebar, setIsCompactSidebar] = useState(false);

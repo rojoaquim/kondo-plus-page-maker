@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,24 +45,46 @@ const Profile: React.FC = () => {
         setLoading(true);
         console.log("Fetching profile for user:", user.id);
         
+        // Use the RPC function instead of direct query to prevent infinite recursion
+        const { data: role, error: roleError } = await supabase.rpc('get_current_user_role');
+        
+        if (roleError) {
+          console.error('Error fetching user role:', roleError);
+          toast.error('Erro ao carregar perfil: ' + roleError.message);
+          return;
+        }
+        
+        // Get user email from auth
+        const email = user.email || '';
+        
+        // Get additional profile data
         const { data, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('full_name, apartment, block')
           .eq('id', user.id)
           .single();
           
         if (error) {
-          console.error('Error fetching profile:', error);
-          toast.error('Erro ao carregar perfil: ' + error.message);
+          console.error('Error fetching profile data:', error);
+          toast.error('Erro ao carregar dados do perfil: ' + error.message);
           return;
         }
         
-        console.log("Profile data received:", data);
-        setProfile(data as Profile);
-        setFullName(data.full_name);
-        setEmail(data.email);
-        setApartment(data.apartment);
-        setBlock(data.block);
+        const profileData: Profile = {
+          id: user.id,
+          email: email,
+          full_name: data.full_name,
+          apartment: data.apartment,
+          block: data.block,
+          role: role
+        };
+        
+        console.log("Profile data received:", profileData);
+        setProfile(profileData);
+        setFullName(profileData.full_name);
+        setEmail(profileData.email);
+        setApartment(profileData.apartment);
+        setBlock(profileData.block);
       } catch (error) {
         console.error('Error:', error);
         toast.error('Ocorreu um erro ao carregar o perfil');
@@ -85,7 +108,6 @@ const Profile: React.FC = () => {
         .from('profiles')
         .update({
           full_name: fullName,
-          email,
           apartment,
           block,
           updated_at: new Date().toISOString(),
@@ -102,7 +124,6 @@ const Profile: React.FC = () => {
       setProfile({
         ...(profile as Profile),
         full_name: fullName,
-        email,
         apartment,
         block,
       });

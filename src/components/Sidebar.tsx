@@ -4,32 +4,19 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, AlertTriangle, Bell, User, Settings, Users, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { KondoLogo } from './KondoLogo';
+import KondoLogo from './KondoLogo';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 
-export const Sidebar = () => {
+interface SidebarProps {
+  isCompact?: boolean;
+  className?: string;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className = '' }) => {
   const location = useLocation();
-  const [isCompact, setIsCompact] = useState(() => {
-    // Verificar se existe uma configuração salva no localStorage
-    const savedCompactSidebar = localStorage.getItem('compactSidebar');
-    return savedCompactSidebar ? JSON.parse(savedCompactSidebar) : false;
-  });
   const { user } = useAuth();
   const [isSindico, setIsSindico] = useState(false);
-
-  useEffect(() => {
-    // Adicionar event listener para mudanças na configuração de compacto
-    const handleCompactChange = (event: CustomEvent) => {
-      setIsCompact(event.detail.compact);
-    };
-
-    window.addEventListener('sidebarCompactChange', handleCompactChange as EventListener);
-
-    return () => {
-      window.removeEventListener('sidebarCompactChange', handleCompactChange as EventListener);
-    };
-  }, []);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -37,19 +24,17 @@ export const Sidebar = () => {
       
       try {
         console.log("Checking user role for:", user.id);
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
+        
+        // Fix for infinite recursion issue: Use the security definer function
+        const { data, error } = await supabase.rpc('get_current_user_role');
         
         if (error) {
           console.error("Error fetching user role:", error);
           return;
         }
         
-        console.log("User role:", data.role);
-        setIsSindico(data.role === 'sindico');
+        console.log("User role:", data);
+        setIsSindico(data === 'sindico');
       } catch (error) {
         console.error('Error:', error);
       }
@@ -79,7 +64,7 @@ export const Sidebar = () => {
     <div
       className={`bg-white border-r h-full flex flex-col transition-all duration-300 ${
         isCompact ? 'w-16' : 'w-60'
-      }`}
+      } ${className}`}
     >
       <div className={`p-4 flex items-center ${isCompact ? 'justify-center' : 'justify-start'}`}>
         <KondoLogo height={isCompact ? 30 : 40} />

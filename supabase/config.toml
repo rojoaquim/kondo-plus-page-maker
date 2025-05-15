@@ -1,1 +1,5 @@
+
 project_id = "nobqpuvkujlljghbjyqp"
+
+[functions.get_current_user_role]
+verify_jwt = true
