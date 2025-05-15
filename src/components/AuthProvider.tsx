@@ -35,17 +35,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const navigate = useNavigate();
 
   const refreshUser = async () => {
-    const { data } = await supabase.auth.getUser();
-    if (data?.user) {
-      setUser(data.user);
+    try {
+      console.log("Refreshing user data...");
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) {
+        console.log("User refreshed:", data.user);
+        setUser(data.user);
+      } else {
+        console.log("No user found during refresh");
+      }
+    } catch (error) {
+      console.error("Error refreshing user:", error);
     }
   };
 
   useEffect(() => {
+    console.log("AuthProvider mounted");
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        console.log("Auth state changed:", _event);
+      (event, session) => {
+        console.log("Auth state changed:", event);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -61,16 +71,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
 
       // Redirect user if requireAuth is true and user is not logged in
       if (requireAuth && !session && window.location.pathname !== '/login') {
+        console.log("No session, redirecting to login");
         navigate('/login', { replace: true });
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log("AuthProvider unmounted, cleaning up subscription");
+      subscription.unsubscribe();
+    };
   }, [navigate, requireAuth]);
 
   // Redirect user to login page if requireAuth is true and user is not logged in
   useEffect(() => {
     if (requireAuth && !loading && !user && window.location.pathname !== '/login') {
+      console.log("No user after loading completed, redirecting to login");
       navigate('/login', { replace: true });
     }
   }, [user, loading, navigate, requireAuth]);

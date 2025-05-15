@@ -47,6 +47,7 @@ const Users: React.FC = () => {
     }
     
     try {
+      console.log("Checking admin status for user:", user.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
@@ -54,11 +55,13 @@ const Users: React.FC = () => {
         .single();
       
       if (error) {
+        console.error("Error checking admin status:", error);
         toast.error('Erro ao verificar permissões');
         navigate('/');
         return;
       }
       
+      console.log("User role:", data.role);
       if (data.role !== 'sindico') {
         toast.error('Você não tem permissão para acessar esta página');
         navigate('/');
@@ -76,6 +79,7 @@ const Users: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      console.log("Fetching users list");
       
       const { data, error } = await supabase
         .from('profiles')
@@ -88,6 +92,7 @@ const Users: React.FC = () => {
         return;
       }
       
+      console.log(`Fetched ${data?.length} users`);
       setUsers(data || []);
     } catch (error) {
       console.error('Erro:', error);
@@ -108,6 +113,7 @@ const Users: React.FC = () => {
     
     try {
       setResettingPassword(true);
+      console.log("Sending password reset for:", selectedUser.email);
       
       const { error } = await supabase.auth.resetPasswordForEmail(selectedUser.email, {
         redirectTo: window.location.origin + '/reset-password',
@@ -135,6 +141,7 @@ const Users: React.FC = () => {
       setUpdatingRole(true);
       
       const newRole = isUserAdmin ? 'morador' : 'sindico';
+      console.log(`Changing user ${selectedUser.id} role to ${newRole}`);
       
       const { error } = await supabase
         .from('profiles')

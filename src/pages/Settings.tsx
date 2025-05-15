@@ -1,87 +1,131 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { useAuth } from '@/components/AuthProvider';
-import { Settings as SettingsIcon } from 'lucide-react';
-import { useOutletContext } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-interface MainLayoutContext {
-  setIsCompactSidebar: (value: boolean) => void;
-}
+// Simulação de temas
+const themes = [
+  { id: 'light', name: 'Claro' },
+  { id: 'dark', name: 'Escuro' },
+  { id: 'system', name: 'Sistema' }
+];
+
+// Simulação de idiomas
+const languages = [
+  { id: 'pt-BR', name: 'Português (Brasil)' },
+  { id: 'en-US', name: 'English (United States)' },
+  { id: 'es', name: 'Español' }
+];
 
 const Settings: React.FC = () => {
-  const [compactSidebar, setCompactSidebar] = useState(false);
-  const { setIsCompactSidebar } = useOutletContext<MainLayoutContext>();
+  const navigate = useNavigate();
+  const [theme, setTheme] = useState('light');
+  const [language, setLanguage] = useState('pt-BR');
+  const [notifications, setNotifications] = useState(true);
+  const [compactSidebar, setCompactSidebar] = useState(() => {
+    // Recuperar a configuração do localStorage
+    const savedCompactSidebar = localStorage.getItem('compactSidebar');
+    return savedCompactSidebar ? JSON.parse(savedCompactSidebar) : false;
+  });
 
-  // Aplicar preferências salvas no carregamento
+  // Efeito para atualizar o localStorage quando a configuração da sidebar mudar
   useEffect(() => {
-    const savedSettings = localStorage.getItem('kondo_settings');
-    if (savedSettings) {
-      try {
-        const settings = JSON.parse(savedSettings);
-        setCompactSidebar(settings.compactSidebar || false);
-      } catch (error) {
-        console.error('Erro ao carregar configurações:', error);
-      }
-    }
-  }, []);
+    localStorage.setItem('compactSidebar', JSON.stringify(compactSidebar));
+    // Disparar um evento personalizado para notificar outros componentes
+    const event = new CustomEvent('sidebarCompactChange', { 
+      detail: { compact: compactSidebar } 
+    });
+    window.dispatchEvent(event);
+  }, [compactSidebar]);
 
-  // Atualizar a preferência de sidebar compacta
-  const handleCompactSidebarChange = (value: boolean) => {
-    setCompactSidebar(value);
-    
-    // Salvar configuração
-    const currentSettings = localStorage.getItem('kondo_settings');
-    let settings = { compactSidebar: value };
-    
-    if (currentSettings) {
-      try {
-        settings = { ...JSON.parse(currentSettings), compactSidebar: value };
-      } catch (error) {
-        console.error('Erro ao analisar configurações:', error);
-      }
-    }
-    
-    localStorage.setItem('kondo_settings', JSON.stringify(settings));
-    
-    // Propagar alteração para o componente pai
-    setIsCompactSidebar(value);
-    
-    toast.success(`Sidebar ${value ? 'compacta' : 'expandida'} aplicada`);
+  const handleSave = () => {
+    toast.success('Configurações salvas com sucesso');
+    // Forçar um recarregamento para aplicar as mudanças
+    navigate(0);
   };
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Configurações</h1>
 
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-medium flex items-center gap-2">
-            <SettingsIcon size={18} className="text-kondo-primary" />
-            Preferências de Interface
-          </CardTitle>
+      <Card className="max-w-2xl">
+        <CardHeader>
+          <CardTitle>Preferências da Interface</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="compact-sidebar">Sidebar Compacta</Label>
-                <p className="text-sm text-muted-foreground">
-                  Exibe apenas os ícones na barra lateral
-                </p>
-              </div>
-              <Switch
-                id="compact-sidebar"
-                checked={compactSidebar}
-                onCheckedChange={handleCompactSidebarChange}
-              />
-            </div>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="theme">Tema</Label>
+            <Select value={theme} onValueChange={(value) => setTheme(value)}>
+              <SelectTrigger id="theme">
+                <SelectValue placeholder="Selecione o tema" />
+              </SelectTrigger>
+              <SelectContent>
+                {themes.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="language">Idioma</Label>
+            <Select value={language} onValueChange={(value) => setLanguage(value)}>
+              <SelectTrigger id="language">
+                <SelectValue placeholder="Selecione o idioma" />
+              </SelectTrigger>
+              <SelectContent>
+                {languages.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center justify-between space-x-2 pt-2">
+            <Label htmlFor="notifications" className="flex flex-col space-y-1">
+              <span>Notificações</span>
+              <span className="font-normal text-xs text-gray-500">
+                Receber notificações sobre novos incidentes e avisos
+              </span>
+            </Label>
+            <Switch
+              id="notifications"
+              checked={notifications}
+              onCheckedChange={setNotifications}
+            />
+          </div>
+
+          <div className="flex items-center justify-between space-x-2 pt-2">
+            <Label htmlFor="compact-sidebar" className="flex flex-col space-y-1">
+              <span>Menu lateral compacto</span>
+              <span className="font-normal text-xs text-gray-500">
+                Exibir o menu lateral em formato reduzido
+              </span>
+            </Label>
+            <Switch
+              id="compact-sidebar"
+              checked={compactSidebar}
+              onCheckedChange={setCompactSidebar}
+            />
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex justify-end">
+        <Button onClick={handleSave} className="bg-kondo-primary hover:bg-kondo-secondary">
+          Salvar configurações
+        </Button>
+      </div>
     </div>
   );
 };

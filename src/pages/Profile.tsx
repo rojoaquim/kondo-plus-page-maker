@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,7 @@ interface Profile {
 }
 
 const Profile: React.FC = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -43,6 +42,8 @@ const Profile: React.FC = () => {
       
       try {
         setLoading(true);
+        console.log("Fetching profile for user:", user.id);
+        
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -55,6 +56,7 @@ const Profile: React.FC = () => {
           return;
         }
         
+        console.log("Profile data received:", data);
         setProfile(data as Profile);
         setFullName(data.full_name);
         setEmail(data.email);
@@ -70,6 +72,8 @@ const Profile: React.FC = () => {
     
     if (user) {
       fetchProfile();
+    } else {
+      console.log("No user available for profile fetch");
     }
   }, [user]);
 
@@ -105,6 +109,7 @@ const Profile: React.FC = () => {
       
       toast.success('Perfil atualizado com sucesso');
       setIsEditing(false);
+      refreshUser();
     } catch (error) {
       console.error('Error:', error);
       toast.error('Ocorreu um erro ao atualizar o perfil');
