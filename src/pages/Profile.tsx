@@ -44,17 +44,22 @@ const Profile: React.FC = () => {
         setLoading(true);
         console.log("Fetching profile for user:", user.id);
         
-        // Type the response explicitly
-        const { data: role, error: roleError } = await supabase.rpc('get_current_user_role', {}) as { data: string | null, error: any };
+        // Define proper types for the RPC call
+        interface RpcResponse {
+          data: string | null;
+          error: any;
+        }
         
-        if (roleError) {
-          console.error('Error fetching user role:', roleError);
-          toast.error('Erro ao carregar perfil: ' + roleError.message);
+        const roleResponse: RpcResponse = await supabase.rpc('get_current_user_role', {});
+        
+        if (roleResponse.error) {
+          console.error('Error fetching user role:', roleResponse.error);
+          toast.error('Erro ao carregar perfil: ' + roleResponse.error.message);
           return;
         }
         
         // Convert role to string if not null
-        const roleStr = role !== null ? String(role) : '';
+        const roleStr = roleResponse.data !== null ? String(roleResponse.data) : '';
         
         // Get user email from auth
         const email = user.email || '';

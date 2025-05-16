@@ -9,11 +9,10 @@ import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/integrations/supabase/client';
 
 interface SidebarProps {
-  isCompact?: boolean;
   className?: string;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className = '' }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   const location = useLocation();
   const { user } = useAuth();
   const [isSindico, setIsSindico] = useState(false);
@@ -25,19 +24,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
       try {
         console.log("Checking user role for:", user.id);
         
-        // Type the response explicitly to handle string data
-        const { data, error } = await supabase.rpc('get_current_user_role', {}) as { data: string | null, error: any };
+        // Define proper types for the RPC call
+        interface RpcResponse {
+          data: string | null;
+          error: any;
+        }
         
-        if (error) {
-          console.error("Error fetching user role:", error);
+        const response: RpcResponse = await supabase.rpc('get_current_user_role', {});
+        
+        if (response.error) {
+          console.error("Error fetching user role:", response.error);
           return;
         }
         
-        console.log("User role:", data);
+        console.log("User role:", response.data);
         
         // Check if data is a string and compare it
-        if (data !== null) {
-          setIsSindico(String(data) === 'sindico');
+        if (response.data !== null) {
+          setIsSindico(String(response.data) === 'sindico');
         }
       } catch (error) {
         console.error('Error:', error);
@@ -70,13 +74,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
 
   return (
     <div
-      className={`bg-white border-r h-full flex flex-col transition-all duration-300 ${
-        isCompact ? 'w-16' : 'w-60'
-      } ${className}`}
+      className={`bg-white border-r h-full flex flex-col transition-all duration-300 w-60 ${className}`}
     >
-      <div className={`p-4 flex items-center ${isCompact ? 'justify-center' : 'justify-start'}`}>
-        <KondoLogo size={isCompact ? "sm" : "md"} />
-        {!isCompact && <span className="ml-2 font-bold text-xl">Kondo</span>}
+      <div className={`p-4 flex items-center justify-start`}>
+        <KondoLogo size="md" />
+        <span className="ml-2 font-bold text-xl">Kondo</span>
       </div>
 
       <nav className="flex-1 mt-10">
@@ -89,9 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
                     <Link to={item.path}>
                       <Button
                         variant="ghost"
-                        className={`w-full flex ${
-                          isCompact ? 'justify-center' : 'justify-start'
-                        } items-center px-3 py-2 ${
+                        className={`w-full flex justify-start items-center px-3 py-2 ${
                           isActive(item.path)
                             ? 'bg-primary/10 text-primary'
                             : 'hover:bg-slate-100'
@@ -101,12 +101,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
                           {React.cloneElement(item.icon, {
                             className: isActive(item.path) ? 'text-primary' : '',
                           })}
-                          {!isCompact && <span className="ml-2">{item.text}</span>}
+                          <span className="ml-2">{item.text}</span>
                         </div>
                       </Button>
                     </Link>
                   </TooltipTrigger>
-                  {isCompact && <TooltipContent side="right">{item.text}</TooltipContent>}
+                  <TooltipContent side="right">{item.text}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </li>
@@ -124,9 +124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
                     <Link to={item.path}>
                       <Button
                         variant="ghost"
-                        className={`w-full flex ${
-                          isCompact ? 'justify-center' : 'justify-start'
-                        } items-center px-3 py-2 ${
+                        className={`w-full flex justify-start items-center px-3 py-2 ${
                           isActive(item.path)
                             ? 'bg-primary/10 text-primary'
                             : 'hover:bg-slate-100'
@@ -136,12 +134,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
                           {React.cloneElement(item.icon, {
                             className: isActive(item.path) ? 'text-primary' : '',
                           })}
-                          {!isCompact && <span className="ml-2">{item.text}</span>}
+                          <span className="ml-2">{item.text}</span>
                         </div>
                       </Button>
                     </Link>
                   </TooltipTrigger>
-                  {isCompact && <TooltipContent side="right">{item.text}</TooltipContent>}
+                  <TooltipContent side="right">{item.text}</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </li>
@@ -153,16 +151,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  className={`w-full flex ${
-                    isCompact ? 'justify-center' : 'justify-start'
-                  } items-center px-3 py-2`}
+                  className="w-full flex justify-start items-center px-3 py-2"
                   onClick={handleLogout}
                 >
                   <LogOut size={20} />
-                  {!isCompact && <span className="ml-2">Sair</span>}
+                  <span className="ml-2">Sair</span>
                 </Button>
               </TooltipTrigger>
-              {isCompact && <TooltipContent side="right">Sair</TooltipContent>}
+              <TooltipContent side="right">Sair</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
