@@ -16,7 +16,7 @@ interface Profile {
   email: string;
   apartment: string;
   block: string;
-  role: string; // Changed from union type to string to fix TypeScript error
+  role: string;
 }
 
 const Profile: React.FC = () => {
@@ -53,6 +53,13 @@ const Profile: React.FC = () => {
           return;
         }
         
+        // Check and ensure role is treated as a string
+        if (typeof role !== 'string') {
+          console.error('Role data is not a string:', role);
+          toast.error('Erro de formato de dados ao carregar perfil');
+          return;
+        }
+        
         // Get user email from auth
         const email = user.email || '';
         
@@ -69,16 +76,13 @@ const Profile: React.FC = () => {
           return;
         }
         
-        // Explicitly cast the role to string to fix TypeScript error
-        const roleString: string = role as string;
-        
         const profileData: Profile = {
           id: user.id,
           email: email,
           full_name: data.full_name,
           apartment: data.apartment,
           block: data.block,
-          role: roleString
+          role: role as string
         };
         
         console.log("Profile data received:", profileData);

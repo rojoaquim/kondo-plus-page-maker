@@ -35,9 +35,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
         
         console.log("User role:", data);
         
-        // Cast the data to string explicitly to fix the TypeScript error
-        const roleValue: string = data as string;
-        setIsSindico(roleValue === 'sindico');
+        if (typeof data === 'string') {
+          // Now TypeScript knows data is a string and comparison is safe
+          setIsSindico(data === 'sindico');
+        }
       } catch (error) {
         console.error('Error:', error);
       }
