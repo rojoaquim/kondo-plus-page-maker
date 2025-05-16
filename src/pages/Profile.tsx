@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,11 +44,10 @@ const Profile: React.FC = () => {
         setLoading(true);
         console.log("Fetching profile for user:", user.id);
         
-        // Define the expected return type explicitly
-        type RpcResponse = { data: string | null, error: any };
-        
-        // Use type assertion with the defined type
-        const { data: role, error: roleError } = await supabase.rpc('get_current_user_role') as RpcResponse;
+        // Call the RPC without type assertions
+        const { data: role, error: roleError } = await supabase.rpc('get_current_user_role', {}, {
+          count: 'exact'
+        });
         
         if (roleError) {
           console.error('Error fetching user role:', roleError);
@@ -57,12 +55,8 @@ const Profile: React.FC = () => {
           return;
         }
         
-        // Check and ensure role is treated as a string
-        if (typeof role !== 'string') {
-          console.error('Role data is not a string:', role);
-          toast.error('Erro de formato de dados ao carregar perfil');
-          return;
-        }
+        // Convert role to string if not null
+        const roleStr = role !== null ? String(role) : '';
         
         // Get user email from auth
         const email = user.email || '';
@@ -86,7 +80,7 @@ const Profile: React.FC = () => {
           full_name: data.full_name,
           apartment: data.apartment,
           block: data.block,
-          role: role
+          role: roleStr
         };
         
         console.log("Profile data received:", profileData);

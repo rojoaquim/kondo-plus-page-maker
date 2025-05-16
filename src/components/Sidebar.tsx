@@ -25,11 +25,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
       try {
         console.log("Checking user role for:", user.id);
         
-        // Define the expected return type explicitly
-        type RpcResponse = { data: string | null, error: any };
-        
-        // Use type assertion with the defined type
-        const { data, error } = await supabase.rpc('get_current_user_role') as RpcResponse;
+        // Define the explicit type for the RPC call
+        const { data, error } = await supabase.rpc('get_current_user_role', {}, { 
+          count: 'exact' 
+        });
         
         if (error) {
           console.error("Error fetching user role:", error);
@@ -38,8 +37,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
         
         console.log("User role:", data);
         
-        if (typeof data === 'string') {
-          setIsSindico(data === 'sindico');
+        // Check if data is a string and compare it
+        if (data !== null) {
+          setIsSindico(String(data) === 'sindico');
         }
       } catch (error) {
         console.error('Error:', error);
