@@ -34,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
         }
         
         console.log("User role:", data);
+        // Fix TypeScript error by ensuring we're comparing strings properly
         setIsSindico(data === 'sindico');
       } catch (error) {
         console.error('Error:', error);

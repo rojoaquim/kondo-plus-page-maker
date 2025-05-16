@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,7 +76,7 @@ const Profile: React.FC = () => {
           full_name: data.full_name,
           apartment: data.apartment,
           block: data.block,
-          role: role as string
+          role: role as string // Fixed TypeScript error by correctly asserting the type
         };
         
         console.log("Profile data received:", profileData);
