@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, AlertTriangle, Bell, User, Settings, Users, LogOut } from 'lucide-react';
@@ -24,24 +23,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
       try {
         console.log("Checking user role for:", user.id);
         
-        // Use a more specific type for the RPC function
-        type RoleResponse = {
-          data: string | null;
-          error: any;
+        // Use correct typing for the RPC function
+        interface RoleResponse {
+          role: string | null;
         }
         
-        const { data, error } = await supabase.rpc('get_current_user_role', {}) as unknown as RoleResponse;
+        const { data, error } = await supabase.rpc<RoleResponse>('get_current_user_role');
         
         if (error) {
           console.error("Error fetching user role:", error);
           return;
         }
         
-        console.log("User role:", data);
+        console.log("User role:", data?.role);
         
         // Check if data is a string and compare it
-        if (data !== null) {
-          setIsSindico(String(data) === 'sindico');
+        if (data && data.role) {
+          setIsSindico(data.role === 'sindico');
         }
       } catch (error) {
         console.error('Error:', error);

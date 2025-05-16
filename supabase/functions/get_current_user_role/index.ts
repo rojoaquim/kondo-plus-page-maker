@@ -56,9 +56,9 @@ serve(async (req) => {
       )
     }
 
-    // Return the role
+    // Return the role as an object with a role property
     return new Response(
-      JSON.stringify(data.role),
+      JSON.stringify({ role: data.role }),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

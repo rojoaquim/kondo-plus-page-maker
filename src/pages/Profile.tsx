@@ -44,54 +44,53 @@ const Profile: React.FC = () => {
         setLoading(true);
         console.log("Fetching profile for user:", user.id);
         
-        // Use a more specific type for the RPC function
-        type RoleResponse = {
-          data: string | null;
-          error: any;
+        // Use correct typing for the RPC function
+        interface RoleResponse {
+          role: string | null;
         }
         
-        const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role', {}) as unknown as RoleResponse;
+        const { data, error } = await supabase.rpc<RoleResponse>('get_current_user_role');
         
-        if (roleError) {
-          console.error('Error fetching user role:', roleError);
-          toast.error('Erro ao carregar perfil: ' + roleError.message);
+        if (error) {
+          console.error('Error fetching user role:', error);
+          toast.error('Erro ao carregar perfil: ' + error.message);
           return;
         }
         
         // Convert role to string if not null
-        const roleStr = roleData !== null ? String(roleData) : '';
+        const roleStr = data?.role || '';
         
         // Get user email from auth
         const email = user.email || '';
         
         // Get additional profile data
-        const { data, error } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('full_name, apartment, block')
           .eq('id', user.id)
           .single();
           
-        if (error) {
-          console.error('Error fetching profile data:', error);
-          toast.error('Erro ao carregar dados do perfil: ' + error.message);
+        if (profileError) {
+          console.error('Error fetching profile data:', profileError);
+          toast.error('Erro ao carregar dados do perfil: ' + profileError.message);
           return;
         }
         
-        const profileData: Profile = {
+        const profileInfo: Profile = {
           id: user.id,
           email: email,
-          full_name: data.full_name,
-          apartment: data.apartment,
-          block: data.block,
+          full_name: profileData.full_name,
+          apartment: profileData.apartment,
+          block: profileData.block,
           role: roleStr
         };
         
-        console.log("Profile data received:", profileData);
-        setProfile(profileData);
-        setFullName(profileData.full_name);
-        setEmail(profileData.email);
-        setApartment(profileData.apartment);
-        setBlock(profileData.block);
+        console.log("Profile data received:", profileInfo);
+        setProfile(profileInfo);
+        setFullName(profileInfo.full_name);
+        setEmail(profileInfo.email);
+        setApartment(profileInfo.apartment);
+        setBlock(profileInfo.block);
       } catch (error) {
         console.error('Error:', error);
         toast.error('Ocorreu um erro ao carregar o perfil');
