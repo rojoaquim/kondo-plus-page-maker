@@ -1,13 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 
 // Simulação de temas
 const themes = [
@@ -24,30 +22,21 @@ const languages = [
 ];
 
 const Settings: React.FC = () => {
-  const navigate = useNavigate();
   const [theme, setTheme] = useState('light');
   const [language, setLanguage] = useState('pt-BR');
   const [notifications, setNotifications] = useState(true);
-  const [compactSidebar, setCompactSidebar] = useState(() => {
-    // Recuperar a configuração do localStorage
-    const savedCompactSidebar = localStorage.getItem('compactSidebar');
-    return savedCompactSidebar ? JSON.parse(savedCompactSidebar) : false;
-  });
-
-  // Efeito para atualizar o localStorage quando a configuração da sidebar mudar
-  useEffect(() => {
-    localStorage.setItem('compactSidebar', JSON.stringify(compactSidebar));
-    // Disparar um evento personalizado para notificar outros componentes
-    const event = new CustomEvent('sidebarCompactChange', { 
-      detail: { compact: compactSidebar } 
-    });
-    window.dispatchEvent(event);
-  }, [compactSidebar]);
 
   const handleSave = () => {
+    const settings = {
+      theme,
+      language,
+      notifications
+    };
+    
+    // Salvar configurações no localStorage
+    localStorage.setItem('kondo_settings', JSON.stringify(settings));
+    
     toast.success('Configurações salvas com sucesso');
-    // Forçar um recarregamento para aplicar as mudanças
-    navigate(0);
   };
 
   return (
@@ -102,20 +91,6 @@ const Settings: React.FC = () => {
               id="notifications"
               checked={notifications}
               onCheckedChange={setNotifications}
-            />
-          </div>
-
-          <div className="flex items-center justify-between space-x-2 pt-2">
-            <Label htmlFor="compact-sidebar" className="flex flex-col space-y-1">
-              <span>Menu lateral compacto</span>
-              <span className="font-normal text-xs text-gray-500">
-                Exibir o menu lateral em formato reduzido
-              </span>
-            </Label>
-            <Switch
-              id="compact-sidebar"
-              checked={compactSidebar}
-              onCheckedChange={setCompactSidebar}
             />
           </div>
         </CardContent>

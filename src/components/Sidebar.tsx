@@ -25,10 +25,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
       try {
         console.log("Checking user role for:", user.id);
         
-        // Define the explicit type for the RPC call
-        const { data, error } = await supabase.rpc('get_current_user_role', {}, { 
-          count: 'exact' 
-        });
+        // Call function with explicitly empty parameters object
+        const { data, error } = await supabase.rpc('get_current_user_role', {});
         
         if (error) {
           console.error("Error fetching user role:", error);
@@ -62,6 +60,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
     { path: '/alerts', icon: <Bell size={20} />, text: 'Avisos' },
     // Only show Users option for síndicos
     ...(isSindico ? [{ path: '/users', icon: <Users size={20} />, text: 'Usuários' }] : []),
+  ];
+
+  // Separate array for profile and settings
+  const userMenuItems = [
     { path: '/profile', icon: <User size={20} />, text: 'Perfil' },
     { path: '/settings', icon: <Settings size={20} />, text: 'Configurações' },
   ];
@@ -112,24 +114,58 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
         </ul>
       </nav>
 
-      <div className="mt-auto p-2 mb-6">
-        <TooltipProvider delayDuration={300}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                className={`w-full flex ${
-                  isCompact ? 'justify-center' : 'justify-start'
-                } items-center px-3 py-2`}
-                onClick={handleLogout}
-              >
-                <LogOut size={20} />
-                {!isCompact && <span className="ml-2">Sair</span>}
-              </Button>
-            </TooltipTrigger>
-            {isCompact && <TooltipContent side="right">Sair</TooltipContent>}
-          </Tooltip>
-        </TooltipProvider>
+      <div className="mt-auto p-2">
+        <ul className="space-y-1">
+          {userMenuItems.map((item) => (
+            <li key={item.path}>
+              <TooltipProvider delayDuration={300}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link to={item.path}>
+                      <Button
+                        variant="ghost"
+                        className={`w-full flex ${
+                          isCompact ? 'justify-center' : 'justify-start'
+                        } items-center px-3 py-2 ${
+                          isActive(item.path)
+                            ? 'bg-primary/10 text-primary'
+                            : 'hover:bg-slate-100'
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          {React.cloneElement(item.icon, {
+                            className: isActive(item.path) ? 'text-primary' : '',
+                          })}
+                          {!isCompact && <span className="ml-2">{item.text}</span>}
+                        </div>
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  {isCompact && <TooltipContent side="right">{item.text}</TooltipContent>}
+                </Tooltip>
+              </TooltipProvider>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-2 mb-4">
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={`w-full flex ${
+                    isCompact ? 'justify-center' : 'justify-start'
+                  } items-center px-3 py-2`}
+                  onClick={handleLogout}
+                >
+                  <LogOut size={20} />
+                  {!isCompact && <span className="ml-2">Sair</span>}
+                </Button>
+              </TooltipTrigger>
+              {isCompact && <TooltipContent side="right">Sair</TooltipContent>}
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
     </div>
   );
