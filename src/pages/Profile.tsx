@@ -45,11 +45,11 @@ const Profile: React.FC = () => {
         setLoading(true);
         console.log("Fetching profile for user:", user.id);
         
-        // Explicitly type the response from the RPC function
-        const { data: role, error: roleError } = await supabase.rpc('get_current_user_role') as {
-          data: unknown,
-          error: any
-        };
+        // Define the expected return type explicitly
+        type RpcResponse = { data: string | null, error: any };
+        
+        // Use type assertion with the defined type
+        const { data: role, error: roleError } = await supabase.rpc('get_current_user_role') as RpcResponse;
         
         if (roleError) {
           console.error('Error fetching user role:', roleError);
