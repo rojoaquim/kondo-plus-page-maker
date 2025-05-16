@@ -25,8 +25,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
       try {
         console.log("Checking user role for:", user.id);
         
-        // Use the security definer function to avoid infinite recursion
-        const { data, error } = await supabase.rpc('get_current_user_role');
+        // Explicitly type the response from the RPC function
+        const { data, error } = await supabase.rpc('get_current_user_role') as { 
+          data: unknown, 
+          error: any 
+        };
         
         if (error) {
           console.error("Error fetching user role:", error);

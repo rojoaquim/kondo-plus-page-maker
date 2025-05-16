@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,8 +45,11 @@ const Profile: React.FC = () => {
         setLoading(true);
         console.log("Fetching profile for user:", user.id);
         
-        // Use the RPC function instead of direct query to prevent infinite recursion
-        const { data: role, error: roleError } = await supabase.rpc('get_current_user_role');
+        // Explicitly type the response from the RPC function
+        const { data: role, error: roleError } = await supabase.rpc('get_current_user_role') as {
+          data: unknown,
+          error: any
+        };
         
         if (roleError) {
           console.error('Error fetching user role:', roleError);
@@ -82,7 +86,7 @@ const Profile: React.FC = () => {
           full_name: data.full_name,
           apartment: data.apartment,
           block: data.block,
-          role: role as string
+          role: role
         };
         
         console.log("Profile data received:", profileData);
