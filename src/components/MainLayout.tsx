@@ -19,12 +19,25 @@ const MainLayout: React.FC = () => {
     }
   }, []);
   
+  // Salvar preferências quando mudar
+  const handleToggleSidebar = (value: boolean) => {
+    setIsCompactSidebar(value);
+    try {
+      const savedSettings = localStorage.getItem('kondo_settings');
+      const settings = savedSettings ? JSON.parse(savedSettings) : {};
+      settings.compactSidebar = value;
+      localStorage.setItem('kondo_settings', JSON.stringify(settings));
+    } catch (error) {
+      console.error('Erro ao salvar configurações de layout:', error);
+    }
+  };
+  
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar isCompact={isCompactSidebar} className="z-50" />
       <main className={`flex-1 overflow-auto p-6 ${isCompactSidebar ? 'ml-16' : 'ml-64'} transition-all duration-300`}>
         <div className="container mx-auto">
-          <Outlet context={{ setIsCompactSidebar }} />
+          <Outlet context={{ setIsCompactSidebar: handleToggleSidebar }} />
         </div>
       </main>
     </div>

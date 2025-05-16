@@ -67,7 +67,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
       } ${className}`}
     >
       <div className={`p-4 flex items-center ${isCompact ? 'justify-center' : 'justify-start'}`}>
-        <KondoLogo height={isCompact ? 30 : 40} />
+        <KondoLogo size={isCompact ? "sm" : "md"} />
         {!isCompact && <span className="ml-2 font-bold text-xl">Kondo</span>}
       </div>
 

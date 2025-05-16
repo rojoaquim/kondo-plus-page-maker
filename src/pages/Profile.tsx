@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ interface Profile {
   email: string;
   apartment: string;
   block: string;
-  role: 'sindico' | 'morador';
+  role: string; // Changed from union type to string to fix TypeScript error
 }
 
 const Profile: React.FC = () => {
@@ -76,7 +75,7 @@ const Profile: React.FC = () => {
           full_name: data.full_name,
           apartment: data.apartment,
           block: data.block,
-          role: role
+          role: role as string
         };
         
         console.log("Profile data received:", profileData);
