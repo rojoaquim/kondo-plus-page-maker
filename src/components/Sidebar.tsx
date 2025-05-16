@@ -25,8 +25,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
       try {
         console.log("Checking user role for:", user.id);
         
-        // Call function with explicitly empty parameters object
-        const { data, error } = await supabase.rpc('get_current_user_role', {});
+        // Type the response explicitly to handle string data
+        const { data, error } = await supabase.rpc('get_current_user_role', {}) as { data: string | null, error: any };
         
         if (error) {
           console.error("Error fetching user role:", error);
