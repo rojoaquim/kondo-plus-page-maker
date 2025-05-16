@@ -44,12 +44,11 @@ const Profile: React.FC = () => {
         setLoading(true);
         console.log("Fetching profile for user:", user.id);
         
-        // Use correct typing for the RPC function
-        interface RoleResponse {
-          role: string | null;
-        }
+        // Use proper typing for the RPC function
+        type RoleResponse = { role: string | null };
         
-        const { data, error } = await supabase.rpc<RoleResponse>('get_current_user_role');
+        // Call the edge function using functions.invoke instead of rpc
+        const { data, error } = await supabase.functions.invoke('get_current_user_role');
         
         if (error) {
           console.error('Error fetching user role:', error);
@@ -57,8 +56,11 @@ const Profile: React.FC = () => {
           return;
         }
         
+        // Cast the response to our expected type
+        const response = data as RoleResponse;
+        
         // Convert role to string if not null
-        const roleStr = data?.role || '';
+        const roleStr = response?.role || '';
         
         // Get user email from auth
         const email = user.email || '';
