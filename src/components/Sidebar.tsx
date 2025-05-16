@@ -25,9 +25,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
       try {
         console.log("Checking user role for:", user.id);
         
-        // Explicitly type the response from the RPC function
+        // Use type assertion to specify the expected return type structure
         const { data, error } = await supabase.rpc('get_current_user_role') as { 
-          data: unknown, 
+          data: string | null, 
           error: any 
         };
         
@@ -39,7 +39,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
         console.log("User role:", data);
         
         if (typeof data === 'string') {
-          // Now TypeScript knows data is a string and comparison is safe
           setIsSindico(data === 'sindico');
         }
       } catch (error) {
