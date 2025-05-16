@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,13 +69,16 @@ const Profile: React.FC = () => {
           return;
         }
         
+        // Explicitly cast the role to string to fix TypeScript error
+        const roleString: string = role as string;
+        
         const profileData: Profile = {
           id: user.id,
           email: email,
           full_name: data.full_name,
           apartment: data.apartment,
           block: data.block,
-          role: role as string // Fixed TypeScript error by correctly asserting the type
+          role: roleString
         };
         
         console.log("Profile data received:", profileData);

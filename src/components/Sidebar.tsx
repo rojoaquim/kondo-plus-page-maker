@@ -25,7 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
       try {
         console.log("Checking user role for:", user.id);
         
-        // Fix for infinite recursion issue: Use the security definer function
+        // Use the security definer function to avoid infinite recursion
         const { data, error } = await supabase.rpc('get_current_user_role');
         
         if (error) {
@@ -34,8 +34,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCompact = false, className =
         }
         
         console.log("User role:", data);
-        // Fix TypeScript error by ensuring we're comparing strings properly
-        setIsSindico(data === 'sindico');
+        
+        // Cast the data to string explicitly to fix the TypeScript error
+        const roleValue: string = data as string;
+        setIsSindico(roleValue === 'sindico');
       } catch (error) {
         console.error('Error:', error);
       }
