@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,22 +44,22 @@ const Profile: React.FC = () => {
         setLoading(true);
         console.log("Fetching profile for user:", user.id);
         
-        // Define proper types for the RPC function response
-        type RpcResponse = {
+        // Use a more specific type for the RPC function
+        type RoleResponse = {
           data: string | null;
           error: any;
         }
         
-        const roleResponse = await supabase.rpc('get_current_user_role') as RpcResponse;
+        const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role', {}) as unknown as RoleResponse;
         
-        if (roleResponse.error) {
-          console.error('Error fetching user role:', roleResponse.error);
-          toast.error('Erro ao carregar perfil: ' + roleResponse.error.message);
+        if (roleError) {
+          console.error('Error fetching user role:', roleError);
+          toast.error('Erro ao carregar perfil: ' + roleError.message);
           return;
         }
         
         // Convert role to string if not null
-        const roleStr = roleResponse.data !== null ? String(roleResponse.data) : '';
+        const roleStr = roleData !== null ? String(roleData) : '';
         
         // Get user email from auth
         const email = user.email || '';
