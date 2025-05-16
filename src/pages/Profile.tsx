@@ -44,13 +44,13 @@ const Profile: React.FC = () => {
         setLoading(true);
         console.log("Fetching profile for user:", user.id);
         
-        // Define proper types for the RPC call
+        // Define proper types for the RPC call - without parameters
         interface RpcResponse {
           data: string | null;
           error: any;
         }
         
-        const roleResponse: RpcResponse = await supabase.rpc('get_current_user_role', {});
+        const roleResponse: RpcResponse = await supabase.rpc('get_current_user_role');
         
         if (roleResponse.error) {
           console.error('Error fetching user role:', roleResponse.error);
