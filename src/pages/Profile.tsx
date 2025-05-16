@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,13 +45,13 @@ const Profile: React.FC = () => {
         setLoading(true);
         console.log("Fetching profile for user:", user.id);
         
-        // Define proper types for the RPC call - without parameters
-        interface RpcResponse {
+        // Define proper types for the RPC function response
+        type RpcResponse = {
           data: string | null;
           error: any;
         }
         
-        const roleResponse: RpcResponse = await supabase.rpc('get_current_user_role');
+        const roleResponse = await supabase.rpc('get_current_user_role') as RpcResponse;
         
         if (roleResponse.error) {
           console.error('Error fetching user role:', roleResponse.error);

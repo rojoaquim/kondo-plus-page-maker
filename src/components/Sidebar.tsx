@@ -24,13 +24,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
       try {
         console.log("Checking user role for:", user.id);
         
-        // Define proper types for the RPC call - without parameters
-        interface RpcResponse {
+        // Define proper types for the RPC function response
+        type RpcResponse = {
           data: string | null;
           error: any;
         }
         
-        const response: RpcResponse = await supabase.rpc('get_current_user_role');
+        const response = await supabase.rpc('get_current_user_role') as RpcResponse;
         
         if (response.error) {
           console.error("Error fetching user role:", response.error);
