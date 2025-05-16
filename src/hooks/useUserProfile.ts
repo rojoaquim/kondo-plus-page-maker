@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { toast } from 'sonner';
 import { useUserRole } from './useUserRole';
+import { UserRole } from './useUserRole';
 
 export interface UserProfile {
   id: string;
@@ -11,7 +12,7 @@ export interface UserProfile {
   email: string;
   apartment: string;
   block: string;
-  role: string;
+  role: UserRole; // Using UserRole type from useUserRole
 }
 
 export function useUserProfile() {
@@ -52,7 +53,7 @@ export function useUserProfile() {
           full_name: profileData.full_name,
           apartment: profileData.apartment,
           block: profileData.block,
-          role: role
+          role: role as UserRole
         };
         
         console.log("Profile data received:", profileInfo);
@@ -74,7 +75,7 @@ export function useUserProfile() {
     }
   }, [user, role]);
 
-  const updateProfile = async (data: Partial<UserProfile>) => {
+  const updateProfile = async (data: Partial<Omit<UserProfile, 'role' | 'id' | 'email'>>) => {
     if (!user) return { error: new Error('Usuário não autenticado') };
     
     try {
