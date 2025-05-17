@@ -24,6 +24,7 @@ import {
 
 interface Incident {
   id: string;
+  sequential_id: number;
   title: string;
   description: string;
   status: string;
@@ -240,7 +241,7 @@ const Incidents: React.FC = () => {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-medium text-lg">#{selectedIncident.id.slice(0, 8)} - {selectedIncident.title}</h3>
+          <h3 className="font-medium text-lg">#{selectedIncident.sequential_id} - {selectedIncident.title}</h3>
           <span 
             className={`inline-block px-2 py-1 rounded text-xs ${getStatusColor(selectedIncident.status)}`}
           >
@@ -413,7 +414,7 @@ const Incidents: React.FC = () => {
                       className="border-b last:border-0 cursor-pointer hover:bg-gray-50"
                       onClick={() => handleIncidentClick(incident)}
                     >
-                      <td className="py-3">#{incident.id.slice(0, 8)}</td>
+                      <td className="py-3">#{incident.sequential_id}</td>
                       <td className="py-3">{incident.title}</td>
                       <td className="py-3">
                         <span 

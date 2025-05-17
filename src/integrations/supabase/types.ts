@@ -14,6 +14,7 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          sequential_id: number | null
           title: string
           updated_at: string
           user_id: string
@@ -22,6 +23,7 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
+          sequential_id?: number | null
           title: string
           updated_at?: string
           user_id: string
@@ -30,6 +32,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          sequential_id?: number | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -45,6 +48,7 @@ export type Database = {
           resolved_at: string | null
           responded_at: string | null
           response: string | null
+          sequential_id: number | null
           status: string
           title: string
           updated_at: string
@@ -58,6 +62,7 @@ export type Database = {
           resolved_at?: string | null
           responded_at?: string | null
           response?: string | null
+          sequential_id?: number | null
           status?: string
           title: string
           updated_at?: string
@@ -71,6 +76,7 @@ export type Database = {
           resolved_at?: string | null
           responded_at?: string | null
           response?: string | null
+          sequential_id?: number | null
           status?: string
           title?: string
           updated_at?: string

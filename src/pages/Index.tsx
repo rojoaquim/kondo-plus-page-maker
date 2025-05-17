@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 
 interface Incident {
   id: string;
+  sequential_id: number;
   title: string;
   status: string;
   created_at: string;
@@ -24,6 +25,7 @@ interface Incident {
 
 interface Alert {
   id: string;
+  sequential_id: number;
   title: string;
   created_at: string;
   description: string;
@@ -70,7 +72,7 @@ const Dashboard: React.FC = () => {
       // Buscar incidentes recentes
       const { data: incidentsData, error: incidentsError } = await supabase
         .from('incidents')
-        .select('id, title, status, created_at, description, response, closing_note')
+        .select('id, sequential_id, title, status, created_at, description, response, closing_note')
         .order('created_at', { ascending: false })
         .limit(5);
       
@@ -80,7 +82,7 @@ const Dashboard: React.FC = () => {
       // Buscar alertas recentes
       const { data: alertsData, error: alertsError } = await supabase
         .from('alerts')
-        .select('id, title, created_at, description')
+        .select('id, sequential_id, title, created_at, description')
         .order('created_at', { ascending: false })
         .limit(5);
       
@@ -138,7 +140,7 @@ const Dashboard: React.FC = () => {
       return (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-medium text-lg">#{selectedIncident.id.slice(0, 8)} - {selectedIncident.title}</h3>
+            <h3 className="font-medium text-lg">#{selectedIncident.sequential_id} - {selectedIncident.title}</h3>
             <span 
               className={`inline-block px-2 py-1 rounded text-xs ${getStatusColor(selectedIncident.status)}`}
             >
@@ -173,7 +175,7 @@ const Dashboard: React.FC = () => {
       // Mostra informações do alerta selecionado
       return (
         <div className="space-y-4">
-          <h3 className="font-medium text-lg">#{selectedAlert.id.slice(0, 8)} - {selectedAlert.title}</h3>
+          <h3 className="font-medium text-lg">#{selectedAlert.sequential_id} - {selectedAlert.title}</h3>
           <div className="flex items-center text-sm text-muted-foreground">
             <Info size={16} className="mr-1" />
             <span>Data: {formatDate(selectedAlert.created_at)}</span>
@@ -233,7 +235,7 @@ const Dashboard: React.FC = () => {
                     className="cursor-pointer hover:bg-slate-50"
                     onClick={() => handleAlertClick(alert)}
                   >
-                    <TableCell>{alert.id.slice(0, 8)}</TableCell>
+                    <TableCell>{alert.sequential_id}</TableCell>
                     <TableCell>{alert.title}</TableCell>
                     <TableCell>{formatDate(alert.created_at)}</TableCell>
                   </TableRow>
@@ -276,7 +278,7 @@ const Dashboard: React.FC = () => {
                     className="cursor-pointer hover:bg-slate-50"
                     onClick={() => handleIncidentClick(incident)}
                   >
-                    <TableCell>{incident.id.slice(0, 8)}</TableCell>
+                    <TableCell>{incident.sequential_id}</TableCell>
                     <TableCell>{incident.title}</TableCell>
                     <TableCell>
                       <span 

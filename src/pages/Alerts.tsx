@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface Alert {
   id: string;
+  sequential_id: number;
   title: string;
   description: string;
   created_at: string;
@@ -190,7 +191,7 @@ const Alerts: React.FC = () => {
                       className="border-b last:border-0 cursor-pointer hover:bg-gray-50"
                       onClick={() => handleAlertClick(alert)}
                     >
-                      <td className="py-3">#{alert.id.slice(0, 8)}</td>
+                      <td className="py-3">#{alert.sequential_id}</td>
                       <td className="py-3">{alert.title}</td>
                       <td className="py-3">{formatDate(alert.created_at)}</td>
                     </tr>
@@ -211,7 +212,7 @@ const Alerts: React.FC = () => {
           {selectedAlert && (
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                <span>Data: {formatDate(selectedAlert.created_at)}</span>
+                <span>ID: #{selectedAlert.sequential_id} | Data: {formatDate(selectedAlert.created_at)}</span>
               </div>
               
               <div className="mt-4">
