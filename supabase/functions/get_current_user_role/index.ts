@@ -17,7 +17,7 @@ serve(async (req) => {
     // Create a Supabase client with the Auth context of the logged in user
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', // Usar o service role key aqui é crucial
       {
         global: {
           headers: { Authorization: req.headers.get('Authorization')! }
@@ -38,8 +38,21 @@ serve(async (req) => {
       )
     }
 
-    // Fetch the user role from the profiles table
-    const { data, error } = await supabaseClient
+    // Use uma conexão admin direta para obter o papel do usuário
+    // Isso evita a recursão das políticas RLS
+    const adminSupabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
+    // Fetch the user role from the profiles table using admin privileges
+    const { data, error } = await adminSupabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
